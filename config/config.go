@@ -1,22 +1,22 @@
 package config
 
 import (
-    "log"
-    "os"
+	"log"
+	"os"
 
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 var BotToken string
 
 func LoadConfig() {
-    err := godotenv.Load()
-    if err != nil {
-        log.Fatalf("Error loading .env file: %v", err)
-    }
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
 
-    BotToken = os.Getenv("BOT_TOKEN")
-    if BotToken == "" {
-        log.Fatalf("BOT_TOKEN is not set in the environment variables")
-    }
+	BotToken = os.Getenv("BOT_TOKEN")
+	if BotToken == "" {
+		log.Fatalf("BOT_TOKEN is not set in the environment variables")
+	}
 }

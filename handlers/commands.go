@@ -13,8 +13,6 @@ var CommandMap = make(map[rune]map[string]CommandMetadata)
 
 var HelpMessages = make(map[string]string)
 
-var AutoCompleteCommands []string
-
 func RegisterCommand(name string, handler CommandHandler, help string) {
 	prefixes := []rune{'!', '?', '/'}
 	for _, prefix := range prefixes {
@@ -28,6 +26,5 @@ func RegisterCommand(name string, handler CommandHandler, help string) {
 	}
 	if help != "" {
 		HelpMessages[name] = help
-        AutoCompleteCommands = append(AutoCompleteCommands, name)
 	}
 }
