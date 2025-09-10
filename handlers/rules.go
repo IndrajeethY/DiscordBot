@@ -17,11 +17,19 @@ func init() {
 
 func rulesCmd(s *discordgo.Session, m *discordgo.MessageCreate, args []string) error {
 	if m.MessageReference != nil && m.MessageReference.MessageID != "" {
-		if len(args) < 1 {
-			_, _ = s.ChannelMessageSendReply(m.ChannelID, "Usage when replying: `rules <memberRoleID>`", m.Reference())
+		var targetChan string
+		var memberRoleID string
+		if len(args) == 0 {
+			_, _ = s.ChannelMessageSendReply(m.ChannelID, "Usage when replying: `rules <memberRoleID>` or `rules <targetChannelID> <memberRoleID>`", m.Reference())
 			return nil
 		}
-		memberRoleID := args[len(args)-1]
+		if len(args) == 1 {
+			targetChan = m.ChannelID
+			memberRoleID = args[0]
+		} else {
+			targetChan = args[0]
+			memberRoleID = args[1]
+		}
 		refChan := m.MessageReference.ChannelID
 		refMsgID := m.MessageReference.MessageID
 		refMsg, err := s.ChannelMessage(refChan, refMsgID)
@@ -31,37 +39,37 @@ func rulesCmd(s *discordgo.Session, m *discordgo.MessageCreate, args []string) e
 		}
 		content := refMsg.Content
 		components := buildRuleButtons(memberRoleID)
-		_, err = s.ChannelMessageSendComplex(refChan, &discordgo.MessageSend{
+		_, err = s.ChannelMessageSendComplex(targetChan, &discordgo.MessageSend{
 			Content:    content,
 			Embeds:     refMsg.Embeds,
 			Components: components,
 		})
 		if err != nil {
-			_, _ = s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("Failed to repost referenced message with buttons: `%v`", err), m.Reference())
+			_, _ = s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("Failed to repost referenced message with buttons to channel `%s`: `%v`", targetChan, err), m.Reference())
 			return err
 		}
 		_, _ = s.ChannelMessageSendReply(m.ChannelID, "Reposted message with rules buttons.", m.Reference())
 		return nil
 	}
 
-	if len(args) < 2 {
-		_, _ = s.ChannelMessageSendReply(m.ChannelID, "Reply to a message and use `rules <memberRoleID>` or use `rules <threadID> <memberRoleID>`", m.Reference())
+	if len(args) >= 2 {
+		threadID := args[0]
+		memberRoleID := args[1]
+		content := "**Server Rules**\n\n1. Be respectful.\n2. No spamming.\n3. Follow staff instructions.\n\nPlease respond using the buttons below."
+		components := buildRuleButtons(memberRoleID)
+		_, err := s.ChannelMessageSendComplex(threadID, &discordgo.MessageSend{
+			Content:    content,
+			Components: components,
+		})
+		if err != nil {
+			_, _ = s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("Failed to send rules to channel `%s`: `%v`", threadID, err), m.Reference())
+			return err
+		}
+		_, _ = s.ChannelMessageSendReply(m.ChannelID, "Rules posted successfully.", m.Reference())
 		return nil
 	}
 
-	threadID := args[0]
-	memberRoleID := args[1]
-	content := "**Server Rules**\n\n1. Be respectful.\n2. No spamming.\n3. Follow staff instructions.\n\nPlease respond using the buttons below."
-	components := buildRuleButtons(memberRoleID)
-	_, err := s.ChannelMessageSendComplex(threadID, &discordgo.MessageSend{
-		Content:    content,
-		Components: components,
-	})
-	if err != nil {
-		_, _ = s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("Failed to send rules to channel `%s`: `%v`", threadID, err), m.Reference())
-		return err
-	}
-	_, _ = s.ChannelMessageSendReply(m.ChannelID, "Rules posted successfully.", m.Reference())
+	_, _ = s.ChannelMessageSendReply(m.ChannelID, "Reply to a message and use `rules <memberRoleID>` or use `rules <threadID> <memberRoleID>`", m.Reference())
 	return nil
 }
 
@@ -120,9 +128,9 @@ func rulesAcceptHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	member, err := s.GuildMember(guildID, userID)
 	if err == nil {
 		if slices.Contains(member.Roles, roleID) {
-				_ = respondEphemeral(s, i, "You are already a member.")
-				return
-			}
+			_ = respondEphemeral(s, i, "You are already a member.")
+			return
+		}
 	}
 
 	if err := s.GuildMemberRoleAdd(guildID, userID, roleID); err != nil {

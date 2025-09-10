@@ -3,12 +3,9 @@ package handlers
 import (
 	"DiscordBot/utils"
 	"strings"
-	"sync"
 
 	"github.com/bwmarrin/discordgo"
 )
-
-var devLoadOnce sync.Once
 
 func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if utils.IsBotMessage(s, m) {
